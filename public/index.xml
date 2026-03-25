@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+    <channel>
+      <title>Nikola Dendić</title>
+      <link>https://localhost:8080</link>
+      <description>Last 10 notes on Nikola Dendić</description>
+      <generator>Quartz -- quartz.jzhao.xyz</generator>
+      <item>
+    <title>GUIDE</title>
+    <link>https://localhost:8080/GUIDE</link>
+    <guid>https://localhost:8080/GUIDE</guid>
+    <description><![CDATA[ Quartz Blog — Maintainer’s Guide Your blog at Projects/quartz-blog/. ]]></description>
+    <pubDate>Wed, 25 Mar 2026 16:30:09 GMT</pubDate>
+  </item><item>
+    <title>Interactive Demo</title>
+    <link>https://localhost:8080/Interactive-Demo</link>
+    <guid>https://localhost:8080/Interactive-Demo</guid>
+    <description><![CDATA[ Interactive Demo This page demonstrates Datastar + Quartz — a static site that comes alive with server-sent events. ]]></description>
+    <pubDate>Wed, 25 Mar 2026 16:30:09 GMT</pubDate>
+  </item><item>
+    <title>Nikola Dendic</title>
+    <link>https://localhost:8080/</link>
+    <guid>https://localhost:8080/</guid>
+    <description><![CDATA[ I’m a D365 Solution Architect by day, framework builder by night, and a student of Carl Jung’s depth psychology at all hours. ]]></description>
+    <pubDate>Wed, 25 Mar 2026 16:30:09 GMT</pubDate>
+  </item><item>
+    <title>FCK PERFECTION</title>
+    <link>https://localhost:8080/FCK-PERFECTION</link>
+    <guid>https://localhost:8080/FCK-PERFECTION</guid>
+    <description><![CDATA[ Sketches Original Clean Extract Extracted Elements Text “FCK PERFECTION” — vertical, top of page (manifesto statement) “SHARP OBJECT” — central banner/title “NO PLAN” — right side, with sun doodle “STAY TU…” — flow diagram element (Stay Tuned? Stay True?) “СТЕЈ ТУ” — bottom, Serbian: “Stay here” Vis... ]]></description>
+    <pubDate>Sat, 21 Feb 2026 00:00:00 GMT</pubDate>
+  </item><item>
+    <title>Active Imagination in the Age of Chat</title>
+    <link>https://localhost:8080/Active-Imagination-in-the-Age-of-Chat</link>
+    <guid>https://localhost:8080/Active-Imagination-in-the-Age-of-Chat</guid>
+    <description><![CDATA[ Active Imagination in the Age of Chat Jung’s Technique for Talking to the Unconscious — and Why It Looks a Lot Like Talking to an LLM I’m Nikola — a D365 Solution Architect building a web framework and exploring what Jung can teach us about talking to machines. ]]></description>
+    <pubDate>Thu, 29 Jan 2026 00:00:00 GMT</pubDate>
+  </item>
+    </channel>
+  </rss>
