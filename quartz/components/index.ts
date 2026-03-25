@@ -23,6 +23,10 @@ import Breadcrumbs from "./Breadcrumbs"
 import Comments from "./Comments"
 import Flex from "./Flex"
 import ConditionalRender from "./ConditionalRender"
+import Datastar from "./Datastar"
+import AuthorAvatar from "./AuthorAvatar"
+import Navbar from "./Navbar"
+import PageHeader from "./PageHeader"
 
 export {
   ArticleTitle,
@@ -50,4 +54,8 @@ export {
   Comments,
   Flex,
   ConditionalRender,
+  Datastar,
+  AuthorAvatar,
+  Navbar,
+  PageHeader,
 }

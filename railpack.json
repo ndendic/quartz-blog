@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "python",
+  "packages": {
+    "nodejs": "22"
+  },
+  "steps": {
+    "install-node": {
+      "commands": [
+        "npm install"
+      ]
+    },
+    "build-quartz": {
+      "inputs": [{ "step": "install-node" }],
+      "commands": [
+        "npx quartz build"
+      ]
+    },
+    "install-python": {
+      "commands": [
+        "pip install sanic datastar-py"
+      ]
+    }
+  },
+  "deploy": {
+    "startCommand": "python backend/server.py",
+    "inputs": [
+      { "step": "build-quartz" },
+      { "step": "install-python" }
+    ]
+  }
+}

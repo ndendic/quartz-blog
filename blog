@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+#
+# blog — CLI for the Quartz + Datastar blog
+#
+# Usage:
+#   ./blog init        Install all dependencies (Node + Python)
+#   ./blog build       Build the Quartz static site
+#   ./blog serve       Start the unified Sanic server
+#   ./blog dev         Build + serve with auto-rebuild on content changes
+#   ./blog sync        Sync published notes from Ideaverse vault
+#   ./blog publish     Full pipeline: sync → build → serve
+#   ./blog preview     Quartz dev server with hot reload (no backend)
+#   ./blog clean       Remove generated files
+#   ./blog help        Show this help message
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+PUBLIC="$ROOT/public"
+BACKEND="$ROOT/backend/server.py"
+SYNC="$ROOT/sync.py"
+CONTENT="$ROOT/content"
+VENV="$ROOT/.venv"
+PYTHON=""
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+DIM='\033[0;90m'
+BOLD='\033[1m'
+NC='\033[0m'
+
+log()  { echo -e "${CYAN}▸${NC} $*"; }
+ok()   { echo -e "${GREEN}✓${NC} $*"; }
+err()  { echo -e "${RED}✗${NC} $*" >&2; }
+head() { echo -e "\n${BOLD}$*${NC}"; }
+
+# Find Python — prefer local venv, then system
+find_python() {
+  if [ -f "$VENV/bin/python" ]; then
+    PYTHON="$VENV/bin/python"
+  elif command -v python3 &>/dev/null; then
+    PYTHON="python3"
+  elif command -v python &>/dev/null; then
+    PYTHON="python"
+  else
+    err "Python not found. Install Python 3.10+ first."
+    exit 1
+  fi
+}
+
+# ─── Commands ────────────────────────────────────────────────
+
+cmd_init() {
+  head "Installing dependencies"
+
+  # Node
+  log "Installing Node packages..."
+  cd "$ROOT"
+  if command -v npm &>/dev/null; then
+    npm install --silent
+    ok "Node packages installed"
+  else
+    err "npm not found. Install Node.js v22+ first."
+    exit 1
+  fi
+
+  # Python venv
+  log "Setting up Python virtual environment..."
+  if [ ! -d "$VENV" ]; then
+    python3 -m venv "$VENV"
+    ok "Created venv at .venv/"
+  else
+    ok "Venv already exists"
+  fi
+  PYTHON="$VENV/bin/python"
+
+  log "Installing Python dependencies..."
+  "$VENV/bin/pip" install --quiet sanic datastar-py
+  ok "Python packages installed (sanic, datastar-py)"
+
+  echo ""
+  ok "All dependencies installed. Run ${BOLD}./blog dev${NC} to start."
+}
+
+cmd_build() {
+  head "Building Quartz site"
+  cd "$ROOT"
+  log "Generating static files → public/"
+  npx quartz build "$@"
+  local count
+  count=$(find "$PUBLIC" -name "*.html" 2>/dev/null | wc -l)
+  ok "Built ${count} HTML files to public/"
+}
+
+cmd_serve() {
+  head "Starting server"
+  find_python
+  log "Serving site at ${BOLD}http://localhost:8000${NC}"
+  log "Press Ctrl+C to stop"
+  echo ""
+  exec "$PYTHON" "$BACKEND"
+}
+
+cmd_dev() {
+  head "Development mode"
+  cd "$ROOT"
+
+  # Build first
+  log "Building site..."
+  npx quartz build
+  ok "Build complete"
+
+  # Start server in background
+  find_python
+  log "Starting server..."
+  "$PYTHON" "$BACKEND" &
+  local SERVER_PID=$!
+  trap "kill $SERVER_PID 2>/dev/null; exit" INT TERM
+
+  echo ""
+  ok "Server running at ${BOLD}http://localhost:8000${NC}"
+  log "Watching content/ for changes..."
+  echo ""
+
+  # Watch for content changes and rebuild
+  local last_build
+  last_build=$(date +%s)
+  while true; do
+    sleep 2
+    local newest
+    newest=$(find "$CONTENT" -name "*.md" -newer "$PUBLIC/index.html" 2>/dev/null | head -1)
+    if [ -n "$newest" ]; then
+      local now
+      now=$(date +%s)
+      if (( now - last_build > 3 )); then
+        log "Change detected, rebuilding..."
+        npx quartz build --quiet 2>/dev/null && ok "Rebuilt" || err "Build failed"
+        last_build=$now
+      fi
+    fi
+  done
+}
+
+cmd_sync() {
+  head "Syncing published notes from vault"
+  find_python
+  if [ ! -f "$SYNC" ]; then
+    err "sync.py not found"
+    exit 1
+  fi
+  "$PYTHON" "$SYNC" "$@"
+}
+
+cmd_publish() {
+  head "Publishing"
+  cmd_sync
+  cmd_build
+  echo ""
+  ok "Ready to serve. Run ${BOLD}./blog serve${NC}"
+}
+
+cmd_preview() {
+  head "Quartz preview server (hot reload)"
+  cd "$ROOT"
+  local port="${1:-3333}"
+  log "Starting at ${BOLD}http://localhost:${port}${NC}"
+  npx quartz build --serve --port "$port"
+}
+
+cmd_clean() {
+  head "Cleaning generated files"
+  if [ -d "$PUBLIC" ]; then
+    rm -rf "$PUBLIC"
+    ok "Removed public/"
+  else
+    log "Nothing to clean"
+  fi
+}
+
+cmd_help() {
+  echo ""
+  echo -e "${BOLD}blog${NC} — CLI for the Quartz + Datastar blog"
+  echo ""
+  echo -e "  ${BOLD}./blog init${NC}        Install all dependencies (Node + Python)"
+  echo -e "  ${BOLD}./blog build${NC}       Build the Quartz static site"
+  echo -e "  ${BOLD}./blog serve${NC}       Start the unified Sanic server"
+  echo -e "  ${BOLD}./blog dev${NC}         Build + serve with auto-rebuild on changes"
+  echo -e "  ${BOLD}./blog sync${NC}        Sync published notes from Ideaverse vault"
+  echo -e "  ${BOLD}./blog publish${NC}     Full pipeline: sync → build → serve"
+  echo -e "  ${BOLD}./blog preview${NC}     Quartz dev server with hot reload (port 3333)"
+  echo -e "  ${BOLD}./blog clean${NC}       Remove generated files"
+  echo -e "  ${BOLD}./blog help${NC}        Show this help"
+  echo ""
+  echo -e "${DIM}Examples:${NC}"
+  echo "  ./blog init                  # First-time setup"
+  echo "  ./blog dev                   # Daily development"
+  echo "  ./blog sync --dry-run        # Preview what sync would do"
+  echo "  ./blog build -v              # Verbose build"
+  echo "  ./blog preview 4000          # Preview on port 4000"
+  echo ""
+}
+
+# ─── Main ────────────────────────────────────────────────────
+
+case "${1:-help}" in
+  init)     shift; cmd_init "$@" ;;
+  build)    shift; cmd_build "$@" ;;
+  serve)    shift; cmd_serve "$@" ;;
+  dev)      shift; cmd_dev "$@" ;;
+  sync)     shift; cmd_sync "$@" ;;
+  publish)  shift; cmd_publish "$@" ;;
+  preview)  shift; cmd_preview "$@" ;;
+  clean)    shift; cmd_clean "$@" ;;
+  help|-h|--help) cmd_help ;;
+  *)        err "Unknown command: $1"; cmd_help; exit 1 ;;
+esac

@@ -1,0 +1,2 @@
+sanic>=25.0.0
+datastar-py>=0.8.0

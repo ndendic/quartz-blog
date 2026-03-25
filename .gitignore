@@ -1,5 +1,4 @@
 .DS_Store
-.gitignore
 node_modules
 public
 prof
@@ -9,3 +8,7 @@ tsconfig.tsbuildinfo
 private/
 .replit
 replit.nix
+.venv/
+__pycache__/
+*.pyc
+*.log
