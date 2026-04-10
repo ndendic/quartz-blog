@@ -63,6 +63,10 @@ def find_published_notes(vault: Path) -> list[Path]:
         rel = md.relative_to(vault)
         if any(part.startswith(".") or part == "x" for part in rel.parts):
             continue
+        # Skip other projects' content folders (only sync Blog-related notes)
+        skip_dirs = {"Sinergija centar", "nitro-systems", "nitro-templates", "Live", "Waiting", "xArchive"}
+        if any(part in skip_dirs for part in rel.parts):
+            continue
         if should_publish(md):
             published.append(md)
     return published

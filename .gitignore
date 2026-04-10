@@ -11,3 +11,5 @@ replit.nix
 __pycache__/
 *.pyc
 *.log
+blog-posts/
+Board.md

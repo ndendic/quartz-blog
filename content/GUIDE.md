@@ -3,7 +3,7 @@ publish: true
 ---
 # Quartz Blog — Maintainer's Guide
 
-Your blog at `Projects/quartz-blog/`. Quartz generates a static site from markdown files, served by Sanic with Datastar interactivity.
+Your blog at `Projects/Blog/`. Quartz generates a static site from markdown files, served by Sanic with Datastar interactivity.
 
 ---
 
@@ -23,6 +23,82 @@ Your blog at `Projects/quartz-blog/`. Quartz generates a static site from markdo
 
 ---
 
+## CLI Tool (`./blog`)
+
+The `blog` CLI handles all common tasks. It's a self-contained bash script at the repo root.
+
+### First-time setup
+
+```bash
+git clone <repo-url>
+cd Blog
+./blog init
+```
+
+This installs Node packages (`npm install`) and creates a Python `.venv` with `sanic` and `datastar-py`.
+
+### Daily development
+
+```bash
+./blog dev
+```
+
+Builds the site, starts the Sanic server on port 8000, and watches `content/` for changes — auto-rebuilds when you edit a note.
+
+### Build only
+
+```bash
+./blog build           # Standard build
+./blog build -v        # Verbose output
+```
+
+Generates static files from `content/` into `public/`. The server reads from `public/` on each request, so no restart needed.
+
+### Start server only
+
+```bash
+./blog serve
+```
+
+Starts the unified Sanic server on port 8000. Serves static files + SSE API endpoints.
+
+### Sync from vault
+
+```bash
+./blog sync              # Sync published notes from Ideaverse
+./blog sync --dry-run    # Preview without copying
+./blog sync /other/vault # Sync from a different vault
+```
+
+Scans the vault for notes with `publish: true` in frontmatter, copies them to `content/` with flattened names, and resolves image embeds to `content/assets/`.
+
+### Full publish pipeline
+
+```bash
+./blog publish
+```
+
+Runs sync → build in sequence. After this, run `./blog serve` to see the result.
+
+### Preview with hot reload
+
+```bash
+./blog preview           # Default port 3333
+./blog preview 4000      # Custom port
+```
+
+Starts Quartz's built-in dev server with hot reload. No backend SSE — use this for content editing only.
+
+### Clean
+
+```bash
+./blog clean
+```
+
+Removes the `public/` directory.
+
+---
+
 ## Writing Content
 
 ### Where to write
@@ -31,9 +107,9 @@ All content lives in `content/`. One markdown file = one page.
 
 ```
 content/
-  index.md                              ← Homepage
-  The Mirror and the Machine.md         ← Blog post
-  Interactive Demo.md                   ← Page with Datastar interactivity
+  index.md                              <- Homepage
+  The Mirror and the Machine.md         <- Blog post
+  Interactive Demo.md                   <- Page with Datastar interactivity
 ```
 
 ### Publishing a note
@@ -53,6 +129,17 @@ tags:
 
 Content here. Supports full Obsidian markdown — wikilinks, callouts, Mermaid diagrams, LaTeX.
 ```
+
+### Publishing from anywhere in the vault
+
+You can add `publish: true` to any note in the Ideaverse vault, then run:
+
+```bash
+./blog sync      # Copies publish:true notes to content/
+./blog build     # Builds the site
+```
+
+Or in one step: `./blog publish`
 
 ### Linking between pages
 
@@ -74,11 +161,11 @@ tags:
 
 ### After editing content
 
-Rebuild and the server picks up changes immediately:
-
 ```bash
-npx quartz build
+./blog build
 ```
+
+The server picks up changes immediately — no restart needed.
 
 ---
 
@@ -121,6 +208,19 @@ Any page can include interactive sections by embedding HTML with Datastar attrib
 | `data-attr:name` | Set HTML attribute dynamically |
 | `data-indicator:name` | Loading indicator (true during fetch) |
 
+### CSS classes for interactive elements
+
+Defined in `quartz/components/Datastar.tsx`, using Quartz theme tokens:
+
+| Class | Purpose |
+|-------|---------|
+| `ds-input` | Styled text input |
+| `ds-btn` | Filled button (secondary color) |
+| `ds-btn-outline` | Outlined button variant |
+| `ds-stat` / `ds-stat-value` / `ds-stat-label` | Metric cards |
+| `ds-success` / `ds-error` / `ds-muted` | Status text colors |
+| `ds-fade-in` | Fade animation for SSE fragments |
+
 ### Backend actions
 
 `@get('/path')` and `@post('/path')` send SSE requests. Signals are sent automatically as query params (GET) or JSON body (POST).
@@ -132,7 +232,7 @@ Any page can include interactive sections by embedding HTML with Datastar attrib
 ### File: `backend/server.py`
 
 The server does two things:
-1. **Serves static files** from `public/` with clean URL support (`/My-Page` → `My-Page.html`)
+1. **Serves static files** from `public/` with clean URL support (`/My-Page` -> `My-Page.html`)
 2. **Handles SSE API endpoints** under `/api/*`
 
 ### Adding a new endpoint
@@ -170,39 +270,47 @@ async def my_endpoint(request: Request):
 ### Running the server
 
 ```bash
-# From quartz-blog directory, using Nitro's Python venv:
-/path/to/nitro/.venv/bin/python backend/server.py
+./blog serve
 ```
+
+Or manually: `.venv/bin/python backend/server.py`
 
 ---
 
 ## Project Structure
 
 ```
-quartz-blog/
-├── content/                    ← YOUR CONTENT (markdown files)
-│   ├── index.md               ← Homepage
-│   └── *.md                   ← Blog posts and pages
+Blog/
+├── blog                       <- CLI tool (this is what you run)
+├── sync.py                    <- Vault sync script
+├── content/                   <- YOUR CONTENT (markdown files)
+│   ├── index.md               <- Homepage
+│   ├── assets/                <- Synced images
+│   └── *.md                   <- Blog posts and pages
 ├── backend/
-│   └── server.py              ← Sanic server (static + SSE)
-├── public/                    ← Generated site (don't edit — rebuilt each time)
+│   └── server.py              <- Sanic server (static + SSE)
+├── public/                    <- Generated site (don't edit)
+├── .venv/                     <- Python venv (created by ./blog init)
 ├── quartz/
-│   ├── components/            ← UI components (JSX/TSX)
-│   │   ├── AuthorAvatar.tsx   ← Your avatar (custom)
-│   │   ├── Datastar.tsx       ← Datastar CSS styles (custom)
-│   │   ├── PageTitle.tsx      ← Site title
-│   │   ├── Explorer.tsx       ← File tree sidebar
-│   │   ├── Graph.tsx          ← Graph view
-│   │   ├── Search.tsx         ← Full-text search
-│   │   └── ...                ← All other built-in components
+│   ├── components/            <- UI components (JSX/TSX)
+│   │   ├── Navbar.tsx         <- Top navigation bar (custom)
+│   │   ├── PageHeader.tsx     <- Avatar + title + meta (custom)
+│   │   ├── Datastar.tsx       <- Datastar CSS styles (custom)
+│   │   ├── PageTitle.tsx      <- Site title in sidebar
+│   │   ├── Explorer.tsx       <- File tree sidebar
+│   │   ├── Graph.tsx          <- Graph view
+│   │   ├── Search.tsx         <- Full-text search
+│   │   └── ...                <- All other built-in components
 │   ├── plugins/
 │   │   └── transformers/
-│   │       └── datastar.tsx   ← Loads Datastar RC.8 via importmap (custom)
+│   │       └── datastar.tsx   <- Loads Datastar RC.8 via importmap
 │   └── styles/
-│       ├── base.scss          ← Base styles
-│       └── custom.scss        ← Your custom CSS overrides
-├── quartz.config.ts           ← Site config (title, theme, plugins)
-├── quartz.layout.ts           ← Page layout (sidebar, header, footer)
+│       ├── base.scss          <- Base styles
+│       ├── variables.scss     <- Spacing, breakpoints ($topSpacing etc.)
+│       └── custom.scss        <- Your custom CSS overrides
+├── quartz.config.ts           <- Site config (title, theme, fonts, plugins)
+├── quartz.layout.ts           <- Page layout (navbar, sidebars, footer)
+├── GUIDE.md                   <- This file
 └── package.json
 ```
 
@@ -212,51 +320,80 @@ quartz-blog/
 
 ### Theme & Colors
 
-Edit `quartz.config.ts` → `theme.colors`:
+Edit `quartz.config.ts` -> `theme.colors`. Uses zinc gray palette:
 
 ```ts
 colors: {
   lightMode: {
-    light: "#faf9f6",       // page background
-    secondary: "#6b4c3b",   // links, accents
-    dark: "#1a1815",         // headers
-    // ...
+    light: "#ffffff",        // page background
+    lightgray: "#e4e4e7",   // borders
+    gray: "#a1a1aa",         // muted text
+    darkgray: "#374151",     // body text
+    dark: "#18181b",         // headings
+    secondary: "#3f3f46",    // links, accents
+    tertiary: "#71717a",     // hover states
   },
-  darkMode: { /* ... */ }
+  darkMode: { /* mirrors with inverted values */ }
 }
 ```
 
 ### Fonts
 
+Any [Google Fonts](https://fonts.google.com) name works:
+
 ```ts
 typography: {
-  header: "Playfair Display",   // headings
-  body: "Inter",                 // body text
-  code: "JetBrains Mono",       // code blocks
+  header: "Poppins",         // headings, navbar title
+  body: "Poppins",           // body text, paragraphs
+  code: "JetBrains Mono",   // code blocks, inline code
 }
+```
+
+### Spacing
+
+Edit `quartz/styles/variables.scss`:
+
+```scss
+$topSpacing: 3rem;       // space between navbar and content
+$pageWidth: 800px;       // mobile breakpoint
+$sidePanelWidth: 320px;  // sidebar width
 ```
 
 ### Layout
 
-Edit `quartz.layout.ts` to rearrange sidebar components:
+Edit `quartz.layout.ts` to rearrange components:
 
 ```ts
-left: [
-  Component.AuthorAvatar(),    // your photo
-  Component.PageTitle(),       // site name
-  Component.Search(),          // search bar
-  Component.Explorer(),        // file tree
+// Top navbar (shared across all pages)
+header: [
+  Component.Navbar({ links: [{ label: "Home", href: "/" }] }),
+  Component.Search(),
+  Component.Darkmode(),
+  Component.ReaderMode(),
 ],
+
+// Left sidebar
+left: [
+  Component.PageTitle(),
+  Component.Explorer(),
+],
+
+// Right sidebar
 right: [
-  Component.Graph(),           // graph view
-  Component.TableOfContents(), // TOC
-  Component.Backlinks(),       // backlinks
+  Component.Graph(),
+  Component.DesktopOnly(Component.TableOfContents()),
+  Component.Backlinks(),
+],
+
+// Content header (before article body)
+beforeBody: [
+  Component.PageHeader(),  // avatar + title + date + tags
 ],
 ```
 
 ### Custom CSS
 
-Add styles to `quartz/styles/custom.scss` — they apply globally.
+Add styles to `quartz/styles/custom.scss` — they apply globally and can use Quartz variables like `var(--secondary)`, `var(--lightgray)`, etc.
 
 ### Creating a new component
 
@@ -301,8 +438,8 @@ left: [ Component.MyComponent(), /* ... */ ]
 ### Current setup (local)
 
 ```bash
-npx quartz build                    # Generate static files
-python backend/server.py            # Serve on port 8000
+./blog init     # One-time setup
+./blog dev      # Daily development
 ```
 
 ### Production options
@@ -318,26 +455,29 @@ python backend/server.py            # Serve on port 8000
 
 ### Deploying to your VPS
 
-1. Push `quartz-blog` to a GitHub repo
-2. On VPS: clone, `npm i`, `npx quartz build`
-3. Run Sanic with a process manager (systemd, supervisor)
-4. Reverse proxy with Nginx/Caddy for HTTPS
+1. Push `Blog` to a GitHub repo
+2. On VPS: clone and run `./blog init`
+3. Build: `./blog build`
+4. Run Sanic with a process manager (systemd, supervisor)
+5. Reverse proxy with Nginx/Caddy for HTTPS
 
 ---
 
 ## Workflow Summary
 
 ```
-Edit markdown in content/
-        ↓
-npx quartz build          (generates public/)
-        ↓
-python backend/server.py  (serves site + SSE)
-        ↓
+./blog init               (one-time: install deps)
+        |
+./blog sync               (optional: pull from vault)
+        |
+./blog build              (generate static site)
+        |
+./blog serve              (start on port 8000)
+        |
 http://localhost:8000     (view in browser)
 ```
 
-For content-only changes, just rebuild. For backend changes, restart the server. For component/config changes, rebuild.
+Or just: `./blog dev` for the full loop with auto-rebuild.
 
 ---
 

@@ -1,7 +1,4 @@
 {
   "$schema": "https://schema.railpack.com",
-  "provider": "python",
-  "deploy": {
-    "startCommand": "python backend/server.py"
-  }
+  "provider": "dockerfile"
 }

@@ -3,7 +3,7 @@ publish: true
 ---
 # Quartz Blog — Maintainer's Guide
 
-Your blog at `Projects/quartz-blog/`. Quartz generates a static site from markdown files, served by Sanic with Datastar interactivity.
+Your blog at `Projects/Blog/`. Quartz generates a static site from markdown files, served by Sanic with Datastar interactivity.
 
 ---
 
@@ -31,7 +31,7 @@ The `blog` CLI handles all common tasks. It's a self-contained bash script at th
 
 ```bash
 git clone <repo-url>
-cd quartz-blog
+cd Blog
 ./blog init
 ```
 
@@ -280,7 +280,7 @@ Or manually: `.venv/bin/python backend/server.py`
 ## Project Structure
 
 ```
-quartz-blog/
+Blog/
 ├── blog                       <- CLI tool (this is what you run)
 ├── sync.py                    <- Vault sync script
 ├── content/                   <- YOUR CONTENT (markdown files)
@@ -455,7 +455,7 @@ left: [ Component.MyComponent(), /* ... */ ]
 
 ### Deploying to your VPS
 
-1. Push `quartz-blog` to a GitHub repo
+1. Push `Blog` to a GitHub repo
 2. On VPS: clone and run `./blog init`
 3. Build: `./blog build`
 4. Run Sanic with a process manager (systemd, supervisor)
